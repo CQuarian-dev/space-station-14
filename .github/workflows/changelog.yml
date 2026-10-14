@@ -6,7 +6,7 @@ on:
 
 env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  CHANGELOG_DIR: Resources/Changelog/EridaChangelog.yml
+  CHANGELOG_DIR: Resources/Changelog/NebulaChangelog.yml
   PR_NUMBER: ${{ github.event.number }}
 
 jobs:
