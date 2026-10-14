@@ -22,7 +22,7 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.base.sha }}
           sparse-checkout: |
-            Tools/Erida/prepare_rsi_diff_comment.py
+            Tools/Nebula/prepare_rsi_diff_comment.py
           sparse-checkout-cone-mode: false
           persist-credentials: false
 
@@ -45,7 +45,7 @@ jobs:
           REMOVED: ${{ steps.files.outputs.deleted_files }}
           ADDED: ${{ steps.files.outputs.added_files }}
         run: |
-          # erida edit: skip huge diffs that exceed the docker argument limit
+          # nebula edit: skip huge diffs that exceed the docker argument limit
           if [ ${#MODIFIED} -gt 100000 ] || [ ${#REMOVED} -gt 100000 ] || [ ${#ADDED} -gt 100000 ]; then
             echo "skip=true" >> "$GITHUB_OUTPUT"
           else
@@ -80,7 +80,7 @@ jobs:
         if: steps.rsi-size.outputs.skip != 'true'
         id: rsi-comment
         run: >
-          python Tools/Erida/prepare_rsi_diff_comment.py
+          python Tools/Nebula/prepare_rsi_diff_comment.py
           --input rsi-diff-full.md
           --output rsi-diff-comment.md
           --run-url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
@@ -98,6 +98,6 @@ jobs:
         if: steps.rsi-size.outputs.skip != 'true'
         uses: marocchino/sticky-pull-request-comment@v3.0.4
         with:
-          header: erida-rsi-diff
+          header: nebula-rsi-diff
           path: rsi-diff-comment.md
           skip_unchanged: true

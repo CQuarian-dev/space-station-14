@@ -26,7 +26,7 @@ async function main() {
 
     let commentlessBody = (body || "").replace(CommentRegex, '');
 
-    const media = getMedia(commentlessBody); // Erida edit
+    const media = getMedia(commentlessBody); // Nebula edit
 
     const headerMatch = HeaderRegex.exec(commentlessBody);
     if (!headerMatch) {
@@ -67,25 +67,25 @@ async function main() {
         url: `https://github.com/${process.env.GITHUB_REPOSITORY}/pull/${process.env.PR_NUMBER}`,
         avatar_url: user.avatar_url,
         title: title,
-        ...(media.length && { media }), // Erida edit
+        ...(media.length && { media }), // Nebula edit
     };
 
-    // Erida start
+    // Nebula start
     if (!writeChangelog(entry)) {
         return;
     }
-    // Erida end
+    // Nebula end
 
     console.log(`Changelog updated with changes from PR #${process.env.PR_NUMBER}`);
 }
 
-// Erida start
+// Nebula start
 function getMedia(body) {
     const urls = [];
     for (const m of body.matchAll(MediaRegex)) urls.push(m[1] || m[2] || m[3]);
     return [...new Set(urls)];
 }
-// Erida end
+// Nebula end
 
 function getChanges(body) {
     const matches = [];
@@ -157,12 +157,12 @@ function writeChangelog(entry) {
     data ??= { Entries: [] };
     data.Entries ??= [];
 
-    // Erida start
+    // Nebula start
     if (data.Entries.some((existing) => existing.url === entry.url)) {
         console.log(`Changelog already contains changes from PR #${process.env.PR_NUMBER}, skipping`);
         return false;
     }
-    // Erida end
+    // Nebula end
 
     data.Entries.push(entry);
 

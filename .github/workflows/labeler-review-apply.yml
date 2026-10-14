@@ -1,4 +1,4 @@
-# Erida edit
+# Nebula edit
 name: "Labels: Review State Apply"
 
 on:
@@ -17,7 +17,7 @@ permissions:
 jobs:
   apply_review_state:
     if: >
-      github.repository == 'dead-space-server/space-erida-14' &&
+      github.repository == 'nebula-station/space-station-14' &&
       github.event.workflow_run.event == 'pull_request_review' &&
       github.event.workflow_run.conclusion == 'success'
     uses: ./.github/workflows/_labeler-review-state-apply.yml

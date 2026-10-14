@@ -13,7 +13,7 @@ permissions:
 jobs:
   awaiting_changes:
     if: >
-      github.repository == 'dead-space-server/space-erida-14' &&
+      github.repository == 'nebula-station/space-station-14' &&
       github.event.review.state == 'changes_requested' &&
       github.event.pull_request.user.login != vars.CHANGELOG_BOT &&
       github.event.pull_request.draft == false

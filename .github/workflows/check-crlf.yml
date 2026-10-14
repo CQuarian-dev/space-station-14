@@ -12,4 +12,4 @@ jobs:
     steps:
       - uses: actions/checkout@v7.0.0
       - name: Check for CRLF
-        run: Tools/Wizards/check_crlf.py
+        run: Tools/check_crlf.py

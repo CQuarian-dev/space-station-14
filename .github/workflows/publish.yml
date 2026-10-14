@@ -45,13 +45,12 @@ jobs:
         run: dotnet run --project Content.Packaging client --no-wipe-release
 
       - name: Publish version
-        run: Tools/Wizards/publish_multi_request.py
+        run: Tools/publish_multi_request.py
         env:
           PUBLISH_TOKEN: ${{ secrets.PUBLISH_TOKEN }}
 
       - name: Publish changelog (Discord)
-        run: Tools/Wizards/actions_changelogs_since_last_run.py
+        run: Tools/actions_changelogs_since_last_run.py
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          DISCORD_WEBHOOK_URL_ERIDA: ${{ secrets.CHANGELOG_DISCORD_ERIDA_WEBHOOK }}
-          DISCORD_WEBHOOK_URL_DEADSPACE: ${{ secrets.DISCORD_WEBHOOK_URL_DEADSPACE }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.CHANGELOG_DISCORD_WEBHOOK }}
