@@ -23,29 +23,28 @@ traitor-death-match-end-round-description-entry = КПК { $originalName }, с {
 ## TraitorRole
 
 # TraitorRole
-
 # SIS-Start
 traitor-role-greeting =
-    Вы [gradient color1="{$hl1}" color2="{$hl2}" speed="1"]тайный агент[/gradient] корпорации [color={$hl1}]{ $corporation }[/color] на службе [color={$hl1}]Синдиката[/color].
+    Вы [gradient color1="#ff3b3b" color2="#8b0000" speed="1"]тайный агент[/gradient] корпорации [color=#ff3b3b]{ $corporation }[/color] на службе [color=#ff3b3b]Синдиката[/color].
     Ваши цели и кодовые слова доступны в меню персонажа.
     Воспользуйтесь своим аплинком, чтобы приобрести необходимое снаряжение для выполнения контракта.
 
-    {"["}gradient color1="{$hl1}" color2="{$hl2}" speed="1.2"]Смерть NanoTrasen![/gradient]
+    {"["}gradient color1="#ff3b3b" color2="#8b0000" speed="1.2"]Смерть NanoTrasen![/gradient]
 
 traitor-title-codewords = Кодовые слова
 traitor-title-equipment = Снаряжение
 
 traitor-role-codewords =
     Кодовые фразы для связи с союзниками:
-    {"["}color={$hl1}]{ $codewords }[/color]
-    Используйте эти слова в обычной речи, чтобы [color={$hl1}]найти других агентов[/color] Синдиката на станции. Прислушивайтесь к разговорам вокруг и держите свои фразы в секрете!
+    {"["}color=#ff3b3b]{ $codewords }[/color]
+    Используйте эти слова в обычной речи, чтобы [color=#ff3b3b]найти других агентов[/color] Синдиката на станции. Прислушивайтесь к разговорам вокруг и держите свои фразы в секрете!
 
 traitor-role-uplink-code =
-    Для доступа к аплинку установите рингтон КПК на код: [gradient color1="{$hl1}" color2="{$hl2}" speed="1.2"]{ $code }[/gradient]
-    {"["}color={$hl1}]Внимание:[/color] обязательно смените рингтон или заблокируйте КПК после покупок, иначе любой член экипажа сможет обнаружить ваш аплинк!
+    Для доступа к аплинку установите рингтон КПК на код: [gradient color1="#ff3b3b" color2="#8b0000" speed="1.2"]{ $code }[/gradient]
+    {"["}color=#ff3b3b]Внимание:[/color] обязательно смените рингтон или заблокируйте КПК после покупок, иначе любой член экипажа сможет обнаружить ваш аплинк!
 
 traitor-role-uplink-implant =
-    В ваше тело встроен [gradient color1="{$hl1}" color2="{$hl2}" speed="1"]имплант-аплинк[/gradient]. Активируйте его из панели действий ([color={$hl1}]хотбара[/color]).
+    В ваше тело встроен [gradient color1="#ff3b3b" color2="#8b0000" speed="1"]имплант-аплинк[/gradient]. Активируйте его из панели действий ([color=#ff3b3b]хотбара[/color]).
     Магазин скрыт внутри вас и недоступен охране, пока имплант не извлекут хирургическим путём.
 # SIS-End
 
@@ -53,5 +52,5 @@ traitor-role-uplink-implant =
 traitor-role-codewords-short =
     Кодовые слова:
     { $codewords }.
-traitor-role-uplink-code-short = Ваш код аплинка: {$code}. Установите его в качестве рингтона КПК для доступа к аплинку.
+traitor-role-uplink-code-short = Ваш код аплинка: { $code }. Установите его в качестве рингтона КПК для доступа к аплинку.
 traitor-role-uplink-implant-short = Ваш аплинк был имплантирован. Получите к нему доступ через меню действий.
