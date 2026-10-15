@@ -19,7 +19,7 @@ public sealed class ChatHighlightTest : GameTest
 {
     [SidedDependency(Side.Client)] private readonly IConfigurationManager _configManager = null!;
     [SidedDependency(Side.Client)] private readonly IUserInterfaceManager _uiManager = null!;
-    private static readonly ProtoId<JobPrototype> Captain = "Captain";
+    private static readonly ProtoId<JobPrototype> Капитан = "Капитан";
 
     [Test]
     [RunOnSide(Side.Client)]
@@ -42,7 +42,7 @@ public sealed class ChatHighlightTest : GameTest
             default,
             new Dictionary<string, List<Shared.Objectives.ObjectiveInfo>>(),
             null,
-            Captain,
+            Капитан,
             "John Doe"
         );
 
@@ -74,23 +74,23 @@ public sealed class ChatHighlightTest : GameTest
             BindingFlags.NonPublic | BindingFlags.Instance
         );
         Assert.That(highlightsField, Is.Not.Null);
-        var activeHighlights = (List<string>)highlightsField.GetValue(chatController)!;
+        var activeHighlights = (List<string>) highlightsField.GetValue(chatController)!;
 
         // Check that custom and auto highlights are loaded
         // Custom:
         Assert.That(activeHighlights, Contains.Item("ling"));
         Assert.That(activeHighlights, Contains.Item("rev"));
         // Auto:
-        Assert.That(activeHighlights, Contains.Item("Captain"));
+        Assert.That(activeHighlights, Contains.Item("Капитан")); // Nebula edit
         Assert.That(activeHighlights, Contains.Item("(?<!\\w)Cap(?!\\w)")); // "Cap" becomes regex-escaped and word-bounded
 
         // 5. Disable auto-fill highlights and verify auto-filled highlights are removed
         _configManager.SetCVar(CCVars.ChatAutoFillHighlights, false);
 
-        activeHighlights = (List<string>)highlightsField.GetValue(chatController)!;
+        activeHighlights = (List<string>) highlightsField.GetValue(chatController)!;
         Assert.That(activeHighlights, Contains.Item("ling"));
         Assert.That(activeHighlights, Contains.Item("rev"));
-        Assert.That(activeHighlights, Is.Not.Contains("Captain"));
+        Assert.That(activeHighlights, Is.Not.Contains("Капитан")); // Nebula edit
     }
 
     [Test]
@@ -112,7 +112,7 @@ public sealed class ChatHighlightTest : GameTest
             BindingFlags.NonPublic | BindingFlags.Instance
         );
         Assert.That(highlightsField, Is.Not.Null);
-        var activeHighlights = (List<string>)highlightsField.GetValue(chatController)!;
+        var activeHighlights = (List<string>) highlightsField.GetValue(chatController)!;
 
         Assert.That(activeHighlights, Contains.Item("ling"));
         Assert.That(activeHighlights, Contains.Item("rev"));
@@ -126,7 +126,7 @@ public sealed class ChatHighlightTest : GameTest
             default,
             new Dictionary<string, List<Shared.Objectives.ObjectiveInfo>>(),
             null,
-            Captain,
+            Капитан,
             "John Doe"
         );
 
@@ -152,10 +152,10 @@ public sealed class ChatHighlightTest : GameTest
         Assert.That(_configManager.GetCVar(CCVars.ChatHighlights), Is.EqualTo(customHighlights));
 
         // - Active highlights list must now merge both custom and auto-filled ones
-        activeHighlights = (List<string>)highlightsField.GetValue(chatController)!;
+        activeHighlights = (List<string>) highlightsField.GetValue(chatController)!;
         Assert.That(activeHighlights, Contains.Item("ling"));
         Assert.That(activeHighlights, Contains.Item("rev"));
-        Assert.That(activeHighlights, Contains.Item("Captain"));
+        Assert.That(activeHighlights, Contains.Item("Капитан"));
         Assert.That(activeHighlights, Contains.Item("(?<!\\w)Cap(?!\\w)"));
     }
 }
