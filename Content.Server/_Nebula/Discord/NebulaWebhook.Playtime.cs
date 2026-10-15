@@ -13,9 +13,6 @@ public sealed partial class NebulaWebhooks
 {
     private static readonly Dictionary<string, string> JobNames = [];
 
-    /// <summary>
-    /// That function cant be called at post inject, because it not loaded prototypes yet
-    /// </summary>
     private void OnPlayTimeWebhookInit()
     {
         foreach (var job in _prototypeManager.EnumeratePrototypes<JobPrototype>())

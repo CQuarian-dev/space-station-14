@@ -27,6 +27,7 @@ public sealed partial class NebulaWebhooks : IPostInjectInit
 
     private WebhookIdentifier? _webhookIdentifierBan;
     private WebhookIdentifier? _webhookIdentifierPlayTime;
+    private WebhookIdentifier? _webhookIdentifierTokens;
     private WebhookIdentifier? _webhookIdentifierPermissions;
 
     public void PostInject()
@@ -43,6 +44,9 @@ public sealed partial class NebulaWebhooks : IPostInjectInit
 
         _cfg.OnValueChanged(NCCVars.DiscordPlayTimeWebhook,
             CreateWebhookHandler(wi => _webhookIdentifierPlayTime = wi), true);
+
+        _cfg.OnValueChanged(NCCVars.DiscordTokensWebhook,
+            CreateWebhookHandler(wi => _webhookIdentifierTokens = wi), true);
 
         _cfg.OnValueChanged(NCCVars.DiscordPermissionsWebhook,
             CreateWebhookHandler(wi => _webhookIdentifierPermissions = wi), true);
@@ -92,6 +96,8 @@ public sealed partial class NebulaWebhooks : IPostInjectInit
         { WebhookType.CoinsRem, ColorToDiscordInt(Color.FromHex("#00706C")) },
         { WebhookType.CoinsSet, ColorToDiscordInt(Color.FromHex("#0d3937")) },
 
+        { WebhookType.TokenBuy, ColorToDiscordInt(Color.FromHex("#007e63")) },
+
         { WebhookType.AdminRoleAdd, ColorToDiscordInt(Color.FromHex("#711300")) },
         { WebhookType.AdminRoleRem, ColorToDiscordInt(Color.FromHex("#a61c00")) },
         { WebhookType.AdminRoleUpdate, ColorToDiscordInt(Color.FromHex("#bb1f00")) },
@@ -110,6 +116,8 @@ public sealed partial class NebulaWebhooks : IPostInjectInit
         CoinsAdd,
         CoinsRem,
         CoinsSet,
+
+        TokenBuy,
 
         AdminRoleAdd,
         AdminRoleRem,
