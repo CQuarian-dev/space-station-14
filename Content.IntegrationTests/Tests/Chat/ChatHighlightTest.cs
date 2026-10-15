@@ -19,7 +19,7 @@ public sealed class ChatHighlightTest : GameTest
 {
     [SidedDependency(Side.Client)] private readonly IConfigurationManager _configManager = null!;
     [SidedDependency(Side.Client)] private readonly IUserInterfaceManager _uiManager = null!;
-    private static readonly ProtoId<JobPrototype> Капитан = "Капитан";
+    private static readonly ProtoId<JobPrototype> Captain = "Captain";
 
     [Test]
     [RunOnSide(Side.Client)]
@@ -42,7 +42,7 @@ public sealed class ChatHighlightTest : GameTest
             default,
             new Dictionary<string, List<Shared.Objectives.ObjectiveInfo>>(),
             null,
-            Капитан,
+            Captain,
             "John Doe"
         );
 
@@ -80,9 +80,9 @@ public sealed class ChatHighlightTest : GameTest
         // Custom:
         Assert.That(activeHighlights, Contains.Item("ling"));
         Assert.That(activeHighlights, Contains.Item("rev"));
-        // Auto:
-        Assert.That(activeHighlights, Contains.Item("Капитан")); // Nebula edit
-        Assert.That(activeHighlights, Contains.Item("(?<!\\w)Cap(?!\\w)")); // "Cap" becomes regex-escaped and word-bounded
+        // Auto (ru-RU highlights-captain):
+        Assert.That(activeHighlights, Contains.Item("Капитан"));
+        Assert.That(activeHighlights, Contains.Item("(?<!\\w)Кэп(?!\\w)")); // "Кэп" becomes regex-escaped and word-bounded
 
         // 5. Disable auto-fill highlights and verify auto-filled highlights are removed
         _configManager.SetCVar(CCVars.ChatAutoFillHighlights, false);
@@ -126,7 +126,7 @@ public sealed class ChatHighlightTest : GameTest
             default,
             new Dictionary<string, List<Shared.Objectives.ObjectiveInfo>>(),
             null,
-            Капитан,
+            Captain,
             "John Doe"
         );
 
@@ -156,6 +156,6 @@ public sealed class ChatHighlightTest : GameTest
         Assert.That(activeHighlights, Contains.Item("ling"));
         Assert.That(activeHighlights, Contains.Item("rev"));
         Assert.That(activeHighlights, Contains.Item("Капитан"));
-        Assert.That(activeHighlights, Contains.Item("(?<!\\w)Cap(?!\\w)"));
+        Assert.That(activeHighlights, Contains.Item("(?<!\\w)Кэп(?!\\w)"));
     }
 }
