@@ -34,7 +34,7 @@
     collection: ErpPat
   messages: ErpPullWingMessages
   icon: _Nebula/Interface/ErpPanel/pat-wings.png
-  userRequirements:
+  targetRequirements:
   - !type:SpeciesRequirement
     species:
     - Moth
