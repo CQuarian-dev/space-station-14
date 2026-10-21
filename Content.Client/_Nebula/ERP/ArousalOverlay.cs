@@ -17,7 +17,7 @@ namespace Content.Client._Nebula.ERP;
 public sealed partial class ArousalOverlay : Overlay
 {
     private static readonly ProtoId<ShaderPrototype> ShaderProto = "ArousalScreenEffect";
-    private static readonly ResPath HeartTexturePath = new("/Textures/_Nebula/Interface/ERP/heartIcon.png");
+    private static readonly ResPath HeartTexturePath = new("/Textures/_Nebula/Interface/ErpPanel/heart_icon.png");
 
     [Dependency] private IEntityManager _entityManager = default!;
     [Dependency] private ILogManager _logManager = default!;
