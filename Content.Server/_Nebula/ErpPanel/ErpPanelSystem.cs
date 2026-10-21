@@ -292,17 +292,20 @@ public sealed partial class ErpPanelSystem : EntitySystem
 
     private void ProcessMoan(EntityUid uid, float moanMultiplier, Filter? privateFilter)
     {
-        if (!TryComp<ArousalComponent>(uid, out var arousal) || arousal.LastValue <= 0 || arousal.MaxArousal == 0)
+        if (!TryComp<ArousalComponent>(uid, out var arousal) || arousal.MaxArousal <= 0)
             return;
-
+    
+        var arousalPercent = Math.Clamp(_arousal.GetArousal(arousal) / arousal.MaxArousal, 0f, 1f);
+        if (arousalPercent <= 0f)
+            return;
+    
         if (!TryComp<HumanoidProfileComponent>(uid, out var profile))
             return;
-
-        var moanChance = arousal.LastValue / arousal.MaxArousal * moanMultiplier / 100f;
-        moanChance = Math.Clamp(moanChance, 0f, 1f);
-
+    
+        var moanChance = Math.Clamp(arousalPercent * moanMultiplier / 100f, 0f, 1f);
+    
         if (_random.Prob(moanChance))
-            MoanWithGender(uid, profile.Gender, arousal.LastValue / arousal.MaxArousal, privateFilter);
+            MoanWithGender(uid, profile.Gender, arousalPercent, privateFilter);
     }
 
     private void MoanWithGender(EntityUid uid, Gender gender, float arousalPercent, Filter? privateFilter)
