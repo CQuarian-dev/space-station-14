@@ -130,6 +130,9 @@
   messages: ErpWallPussyFuckMessages
   icon: _Nebula/Interface/ErpPanel/kabedon.png
   targetRequirements:
+  - !type:SexRequirement
+    sexes:
+    - Female
   - !type:NearbyStaticEntityRequirement
     whitelist:
       components:
