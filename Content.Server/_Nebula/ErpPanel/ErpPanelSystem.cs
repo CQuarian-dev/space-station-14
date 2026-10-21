@@ -53,7 +53,7 @@ public sealed partial class ErpPanelSystem : EntitySystem
     private static readonly EntProtoId HeartsProto = "EffectHearts";
 
     private static readonly SpriteSpecifier VerbIcon =
-        new SpriteSpecifier.Texture(new("/Textures/_Nebula/Interface/ERP/heartIcon.png"));
+        new SpriteSpecifier.Texture(new("/Textures/_Nebula/Interface/ErpPanel/heart_icon.png"));
 
     public override void Initialize()
     {
