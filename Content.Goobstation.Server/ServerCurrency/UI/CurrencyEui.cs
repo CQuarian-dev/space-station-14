@@ -3,7 +3,9 @@
 using Content.Goobstation.Common.ServerCurrency;
 using Content.Goobstation.Shared.ServerCurrency;
 using Content.Goobstation.Shared.ServerCurrency.UI;
+using Content.Server._Nebula.Discord;
 using Content.Server.Administration.Notes;
+using Content.Server.Chat.Managers;
 using Content.Server.EUI;
 using Content.Shared.Eui;
 using Robust.Shared.Player;
@@ -15,6 +17,8 @@ public sealed partial class CurrencyEui : BaseEui
     [Dependency] private ICommonCurrencyManager _currency = default!;
     [Dependency] private IAdminNotesManager _notes = default!;
     [Dependency] private IPrototypeManager _proto = default!;
+    [Dependency] private IChatManager _chat = default!; // Nebula
+    [Dependency] private NebulaWebhooks _webhooks = default!; // Nebula
 
     public CurrencyEui()
     {
@@ -54,5 +58,9 @@ public sealed partial class CurrencyEui : BaseEui
         _currency.RemoveCurrency(Player.UserId, token.Price);
         await _notes.AddAdminRemark(Player, Player.UserId, 0,
             Loc.GetString(token.AdminNote), 0, false, null);
+
+        // Nebula
+        _chat.SendAdminAnnouncement($"{Player.Name} " + Loc.GetString(token.AdminNote));
+        _webhooks.SendTokenBoughtMessage(Player.UserId, token);
     }
 }

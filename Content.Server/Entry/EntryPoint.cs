@@ -14,6 +14,7 @@ using Content.Server.GuideGenerator;
 using Content.Server.Info;
 using Content.Server.IoC;
 using Content.Server.Maps;
+using Content.Server._Nebula.Administration;
 using Content.Server.NodeContainer.NodeGroups;
 using Content.Server.Players.JobWhitelist;
 using Content.Server.Players.PlayTimeTracking;
@@ -73,6 +74,7 @@ namespace Content.Server.Entry
         [Dependency] private PlayerRateLimitManager _rateLimit = default!;
         [Dependency] private RulesManager _rules = default!;
         [Dependency] private ServerApi _serverApi = default!;
+        [Dependency] private NebulaServerApi _nebulaServerApi = default!; // Nebula
         [Dependency] private ServerInfoManager _serverInfo = default!;
         [Dependency] private ServerUpdateManager _updateManager = default!;
         [Dependency] private ServerFeedbackManager _feedbackManager = null!;
@@ -126,6 +128,7 @@ namespace Content.Server.Entry
             _ghostKick.Initialize();
             _serverInfo.Initialize();
             _serverApi.Initialize();
+            _nebulaServerApi.Initialize(); // Nebula
             _voteManager.Initialize();
             _updateManager.Initialize();
             _playTimeTracking.Initialize();
