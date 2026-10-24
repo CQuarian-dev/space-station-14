@@ -139,8 +139,8 @@ public sealed partial class ErpPanelWindow : NebulaWindow
 
     public void SetTarget(NetEntity user, NetEntity target)
     {
-        _currentUser = _entManager.TryGetEntity(user);
-        _currentTarget = _entManager.TryGetEntity(target);
+        _currentUser = _entManager.TryGetEntity(user, out var userUid) ? userUid : null;
+        _currentTarget = _entManager.TryGetEntity(target, out var targetUid) ? targetUid : null;
         _currentInteractions.Clear();
         _openedCategories.Clear();
         _hasInitializedCategories = false;
