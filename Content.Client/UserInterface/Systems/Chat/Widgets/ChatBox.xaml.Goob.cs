@@ -22,8 +22,8 @@ public partial class ChatBox
     public void Repopulate()
     {
         Contents.Clear();
-        _lastLine = null; // Nebula
-        _lastLineRepeatCount = 0; // Nebula
+        ResetCoalescence(); // Nebula
+
 
         // Goobstation start
         foreach (var child in Contents.Children.ToArray())
