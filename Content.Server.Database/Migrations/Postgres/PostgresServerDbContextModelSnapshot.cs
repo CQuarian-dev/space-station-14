@@ -230,6 +230,10 @@ namespace Content.Server.Database.Migrations.Postgres
                         .HasColumnType("boolean")
                         .HasColumnName("seen");
 
+                    b.Property<int?>("ServerId")
+                        .HasColumnType("integer")
+                        .HasColumnName("server_id");
+
                     b.HasKey("Id")
                         .HasName("PK_admin_messages");
 
@@ -244,6 +248,9 @@ namespace Content.Server.Database.Migrations.Postgres
 
                     b.HasIndex("RoundId")
                         .HasDatabaseName("IX_admin_messages_round_id");
+
+                    b.HasIndex("ServerId")
+                        .HasDatabaseName("IX_admin_messages_server_id");
 
                     b.ToTable("admin_messages", null, t =>
                         {
@@ -314,6 +321,10 @@ namespace Content.Server.Database.Migrations.Postgres
                         .HasColumnType("boolean")
                         .HasColumnName("secret");
 
+                    b.Property<int?>("ServerId")
+                        .HasColumnType("integer")
+                        .HasColumnName("server_id");
+
                     b.Property<int>("Severity")
                         .HasColumnType("integer")
                         .HasColumnName("severity");
@@ -332,6 +343,9 @@ namespace Content.Server.Database.Migrations.Postgres
 
                     b.HasIndex("RoundId")
                         .HasDatabaseName("IX_admin_notes_round_id");
+
+                    b.HasIndex("ServerId")
+                        .HasDatabaseName("IX_admin_notes_server_id");
 
                     b.ToTable("admin_notes", (string)null);
                 });
@@ -444,6 +458,10 @@ namespace Content.Server.Database.Migrations.Postgres
                         .HasColumnType("integer")
                         .HasColumnName("round_id");
 
+                    b.Property<int?>("ServerId")
+                        .HasColumnType("integer")
+                        .HasColumnName("server_id");
+
                     b.HasKey("Id")
                         .HasName("PK_admin_watchlists");
 
@@ -458,6 +476,9 @@ namespace Content.Server.Database.Migrations.Postgres
 
                     b.HasIndex("RoundId")
                         .HasDatabaseName("IX_admin_watchlists_round_id");
+
+                    b.HasIndex("ServerId")
+                        .HasDatabaseName("IX_admin_watchlists_server_id");
 
                     b.ToTable("admin_watchlists", (string)null);
                 });
@@ -569,6 +590,10 @@ namespace Content.Server.Database.Migrations.Postgres
                         .HasColumnType("text")
                         .HasColumnName("reason");
 
+                    b.Property<int?>("ServerId")
+                        .HasColumnType("integer")
+                        .HasColumnName("server_id");
+
                     b.Property<int>("Severity")
                         .HasColumnType("integer")
                         .HasColumnName("severity");
@@ -583,6 +608,9 @@ namespace Content.Server.Database.Migrations.Postgres
                     b.HasIndex("BanningAdmin");
 
                     b.HasIndex("LastEditedById");
+
+                    b.HasIndex("ServerId")
+                        .HasDatabaseName("IX_ban_server_id");
 
                     b.ToTable("ban", null, t =>
                         {
@@ -1697,6 +1725,10 @@ namespace Content.Server.Database.Migrations.Postgres
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<int>("Number")
+                        .HasColumnType("integer")
+                        .HasColumnName("number");
+
                     b.Property<int>("ServerId")
                         .HasColumnType("integer")
                         .HasColumnName("server_id");
@@ -1708,10 +1740,10 @@ namespace Content.Server.Database.Migrations.Postgres
                     b.HasKey("Id")
                         .HasName("PK_round");
 
-                    b.HasIndex("ServerId")
-                        .HasDatabaseName("IX_round_server_id");
-
                     b.HasIndex("StartDate");
+
+                    b.HasIndex("ServerId", "Number")
+                        .IsUnique();
 
                     b.ToTable("round", (string)null);
                 });
@@ -1999,6 +2031,12 @@ namespace Content.Server.Database.Migrations.Postgres
                         .HasForeignKey("RoundId")
                         .HasConstraintName("FK_admin_messages_round_round_id");
 
+                    b.HasOne("Content.Server.Database.Server", "Server")
+                        .WithMany()
+                        .HasForeignKey("ServerId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("FK_admin_messages_server_server_id");
+
                     b.Navigation("CreatedBy");
 
                     b.Navigation("DeletedBy");
@@ -2008,6 +2046,8 @@ namespace Content.Server.Database.Migrations.Postgres
                     b.Navigation("Player");
 
                     b.Navigation("Round");
+
+                    b.Navigation("Server");
                 });
 
             modelBuilder.Entity("Content.Server.Database.AdminNote", b =>
@@ -2045,6 +2085,12 @@ namespace Content.Server.Database.Migrations.Postgres
                         .HasForeignKey("RoundId")
                         .HasConstraintName("FK_admin_notes_round_round_id");
 
+                    b.HasOne("Content.Server.Database.Server", "Server")
+                        .WithMany()
+                        .HasForeignKey("ServerId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("FK_admin_notes_server_server_id");
+
                     b.Navigation("CreatedBy");
 
                     b.Navigation("DeletedBy");
@@ -2054,6 +2100,8 @@ namespace Content.Server.Database.Migrations.Postgres
                     b.Navigation("Player");
 
                     b.Navigation("Round");
+
+                    b.Navigation("Server");
                 });
 
             modelBuilder.Entity("Content.Server.Database.AdminRankFlag", b =>
@@ -2103,6 +2151,12 @@ namespace Content.Server.Database.Migrations.Postgres
                         .HasForeignKey("RoundId")
                         .HasConstraintName("FK_admin_watchlists_round_round_id");
 
+                    b.HasOne("Content.Server.Database.Server", "Server")
+                        .WithMany()
+                        .HasForeignKey("ServerId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("FK_admin_watchlists_server_server_id");
+
                     b.Navigation("CreatedBy");
 
                     b.Navigation("DeletedBy");
@@ -2112,6 +2166,8 @@ namespace Content.Server.Database.Migrations.Postgres
                     b.Navigation("Player");
 
                     b.Navigation("Round");
+
+                    b.Navigation("Server");
                 });
 
             modelBuilder.Entity("Content.Server.Database.Antag", b =>
@@ -2142,9 +2198,17 @@ namespace Content.Server.Database.Migrations.Postgres
                         .OnDelete(DeleteBehavior.SetNull)
                         .HasConstraintName("FK_ban_player_last_edited_by_id");
 
+                    b.HasOne("Content.Server.Database.Server", "Server")
+                        .WithMany()
+                        .HasForeignKey("ServerId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("FK_ban_server_server_id");
+
                     b.Navigation("CreatedBy");
 
                     b.Navigation("LastEditedBy");
+
+                    b.Navigation("Server");
                 });
 
             modelBuilder.Entity("Content.Server.Database.BanAddress", b =>

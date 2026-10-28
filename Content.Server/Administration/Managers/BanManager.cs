@@ -282,10 +282,12 @@ public sealed partial class BanManager : IBanManager, IPostInjectInit
         {
             roundIds = [..banInfo.RoundIds];
         }
-        else if (_systems.TryGetEntitySystem<ServerGameTicker>(out var ticker) && ticker.RoundId != 0)
+        // Nebula edit start
+        else if (_systems.TryGetEntitySystem<ServerGameTicker>(out var ticker) && ticker.RoundDatabaseId != 0)
         {
-            roundIds = [ticker.RoundId];
+            roundIds = [ticker.RoundDatabaseId];
         }
+        // Nebula edit end
         else
         {
             roundIds = [];
@@ -369,7 +371,10 @@ public sealed partial class BanManager : IBanManager, IPostInjectInit
     {
         var ban = await _db.GetBanAsync(banId);
 
-        if (ban == null)
+        // Nebula edit start
+        var scope = await _db.GetRecordScopeServerId();
+        if (ban == null || !RecordScope.Matches(ban.ServerId, scope))
+        // Nebula edit end
         {
             return $"No ban found with id {banId}";
         }

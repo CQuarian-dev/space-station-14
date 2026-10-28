@@ -378,7 +378,10 @@ namespace Content.Server.Database
             NetUserId? userId,
             ImmutableArray<byte>? hwId,
             ImmutableArray<ImmutableArray<byte>>? modernHWIds,
-            BanType type);
+            // Nebula edit start
+            BanType type,
+            int? scopeServerId);
+            // Nebula edit end
 
         /// <summary>
         ///     Looks up an user's ban history.
@@ -397,7 +400,10 @@ namespace Content.Server.Database
             ImmutableArray<byte>? hwId,
             ImmutableArray<ImmutableArray<byte>>? modernHWIds,
             bool includeUnbanned,
-            BanType type);
+            // Nebula edit start
+            BanType type,
+            int? scopeServerId);
+            // Nebula edit end
 
         public abstract Task<BanDef> AddBanAsync(BanDef ban);
         public abstract Task AddUnbanAsync(UnbanDef unban);
@@ -747,7 +753,7 @@ namespace Content.Server.Database
             await db.DbContext.SaveChangesAsync(cancel);
         }
 
-        public async Task<int> AddNewRound(Server server, params Guid[] playerIds)
+        public async Task<(int Id, int Number)> AddNewRound(Server server, params Guid[] playerIds) // Nebula edit
         {
             await using var db = await GetDb();
 
@@ -755,18 +761,25 @@ namespace Content.Server.Database
                 .Where(player => playerIds.Contains(player.UserId))
                 .ToListAsync();
 
+            // Nebula edit start
+            var number = await db.DbContext.Round
+                .Where(round => round.ServerId == server.Id)
+                .MaxAsync(round => (int?)round.Number) ?? 0;
+            // Nebula edit end
+
             var round = new Round
             {
                 StartDate = DateTime.UtcNow,
                 Players = players,
-                ServerId = server.Id
+                ServerId = server.Id,
+                Number = number + 1 // Nebula edit
             };
 
             db.DbContext.Round.Add(round);
 
             await db.DbContext.SaveChangesAsync();
 
-            return round.Id;
+            return (round.Id, round.Number); // Nebula edit
         }
 
         public async Task<Round> GetRound(int id)
@@ -808,7 +821,8 @@ INSERT INTO player_round (players_id, rounds_id) VALUES ({players[player]}, {id}
             return new RoundRecord(
                 round.Id,
                 NormalizeDatabaseTime(round.StartDate),
-                MakeServerRecord(round.Server));
+                MakeServerRecord(round.Server),
+                round.Number); // Nebula edit
         }
 
         public async Task UpdateAdminRankAsync(AdminRank rank, CancellationToken cancel)
@@ -1265,13 +1279,13 @@ INSERT INTO player_round (players_id, rounds_id) VALUES ({players[player]}, {id}
             return await MakeBanNoteRecord(db.DbContext, ban);
         }
 
-        public async Task<List<IAdminRemarksRecord>> GetAllAdminRemarks(Guid player)
+        public async Task<List<IAdminRemarksRecord>> GetAllAdminRemarks(Guid player, int? scopeServerId) // Nebula edit
         {
             return await ParallelCollect<IAdminRemarksRecord>(
                 async () =>
                 {
                     await using var db = await GetDb();
-                    return (await (from note in db.DbContext.AdminNotes
+                    return (await (from note in db.DbContext.AdminNotes.InScope(scopeServerId) // Nebula edit
                                    where note.PlayerUserId == player &&
                                          !note.Deleted &&
                                          (note.ExpirationTime == null || DateTime.UtcNow < note.ExpirationTime)
@@ -1286,17 +1300,17 @@ INSERT INTO player_round (players_id, rounds_id) VALUES ({players[player]}, {id}
                 async () =>
                 {
                     await using var db = await GetDb();
-                    return await GetActiveWatchlistsImpl(db, player);
+                    return await GetActiveWatchlistsImpl(db, player, scopeServerId); // Nebula edit
                 },
                 async () =>
                 {
                     await using var db = await GetDb();
-                    return await GetMessagesImpl(db, player);
+                    return await GetMessagesImpl(db, player, scopeServerId); // Nebula edit
                 },
                 async () =>
                 {
                     await using var db = await GetDb();
-                    return await GetBansAsNotesForUser(db, player);
+                    return await GetBansAsNotesForUser(db, player, scopeServerId); // Nebula edit
                 });
         }
         public async Task EditAdminNote(int id, string message, NoteSeverity severity, bool secret, Guid editedBy, DateTimeOffset editedAt, DateTimeOffset? expiryTime)
@@ -1392,12 +1406,12 @@ INSERT INTO player_round (players_id, rounds_id) VALUES ({players[player]}, {id}
             await db.DbContext.SaveChangesAsync();
         }
 
-        public async Task<List<IAdminRemarksRecord>> GetVisibleAdminRemarks(Guid player)
+        public async Task<List<IAdminRemarksRecord>> GetVisibleAdminRemarks(Guid player, int? scopeServerId) // Nebula edit
         {
             await using var db = await GetDb();
             List<IAdminRemarksRecord> notesCol = new();
             notesCol.AddRange(
-                (await (from note in db.DbContext.AdminNotes
+                (await (from note in db.DbContext.AdminNotes.InScope(scopeServerId) // Nebula edit
                         where note.PlayerUserId == player &&
                               !note.Secret &&
                               !note.Deleted &&
@@ -1408,20 +1422,22 @@ INSERT INTO player_round (players_id, rounds_id) VALUES ({players[player]}, {id}
                     .Include(note => note.CreatedBy)
                     .Include(note => note.Player)
                     .ToListAsync()).Select(MakeAdminNoteRecord));
-            notesCol.AddRange(await GetMessagesImpl(db, player));
-            notesCol.AddRange(await GetBansAsNotesForUser(db, player));
+            // Nebula edit start
+            notesCol.AddRange(await GetMessagesImpl(db, player, scopeServerId));
+            notesCol.AddRange(await GetBansAsNotesForUser(db, player, scopeServerId));
+            // Nebula edit end
             return notesCol;
         }
 
-        public async Task<List<AdminWatchlistRecord>> GetActiveWatchlists(Guid player)
+        public async Task<List<AdminWatchlistRecord>> GetActiveWatchlists(Guid player, int? scopeServerId) // Nebula edit
         {
             await using var db = await GetDb();
-            return await GetActiveWatchlistsImpl(db, player);
+            return await GetActiveWatchlistsImpl(db, player, scopeServerId); // Nebula edit
         }
 
-        protected async Task<List<AdminWatchlistRecord>> GetActiveWatchlistsImpl(DbGuard db, Guid player)
+        protected async Task<List<AdminWatchlistRecord>> GetActiveWatchlistsImpl(DbGuard db, Guid player, int? scopeServerId) // Nebula edit
         {
-            var entities = await (from watchlist in db.DbContext.AdminWatchlists
+            var entities = await (from watchlist in db.DbContext.AdminWatchlists.InScope(scopeServerId) // Nebula edit
                                   where watchlist.PlayerUserId == player &&
                                         !watchlist.Deleted &&
                                         (watchlist.ExpirationTime == null || DateTime.UtcNow < watchlist.ExpirationTime)
@@ -1441,15 +1457,15 @@ INSERT INTO player_round (players_id, rounds_id) VALUES ({players[player]}, {id}
             return new AdminWatchlistRecord(entity.Id, MakeRoundRecord(entity.Round), MakePlayerRecord(entity.Player), entity.PlaytimeAtNote, entity.Message, MakePlayerRecord(entity.CreatedBy), NormalizeDatabaseTime(entity.CreatedAt), MakePlayerRecord(entity.LastEditedBy), NormalizeDatabaseTime(entity.LastEditedAt), NormalizeDatabaseTime(entity.ExpirationTime), entity.Deleted, MakePlayerRecord(entity.DeletedBy), NormalizeDatabaseTime(entity.DeletedAt));
         }
 
-        public async Task<List<AdminMessageRecord>> GetMessages(Guid player)
+        public async Task<List<AdminMessageRecord>> GetMessages(Guid player, int? scopeServerId) // Nebula edit
         {
             await using var db = await GetDb();
-            return await GetMessagesImpl(db, player);
+            return await GetMessagesImpl(db, player, scopeServerId); // Nebula edit
         }
 
-        protected async Task<List<AdminMessageRecord>> GetMessagesImpl(DbGuard db, Guid player)
+        protected async Task<List<AdminMessageRecord>> GetMessagesImpl(DbGuard db, Guid player, int? scopeServerId) // Nebula edit
         {
-            var entities = await (from message in db.DbContext.AdminMessages
+            var entities = await (from message in db.DbContext.AdminMessages.InScope(scopeServerId) // Nebula edit
                                   where message.PlayerUserId == player && !message.Deleted &&
                                         (message.ExpirationTime == null || DateTime.UtcNow < message.ExpirationTime)
                                   select message).Include(note => note.Round)
@@ -1518,13 +1534,14 @@ INSERT INTO player_round (players_id, rounds_id) VALUES ({players[player]}, {id}
         }
 
         // These two are here because they get converted into notes later
-        protected async Task<List<BanNoteRecord>> GetBansAsNotesForUser(DbGuard db, Guid user)
+        protected async Task<List<BanNoteRecord>> GetBansAsNotesForUser(DbGuard db, Guid user, int? scopeServerId) // Nebula edit
         {
             // You can't group queries, as player will not always exist. When it doesn't, the
             // whole query returns nothing
             var bans = await BanRecordQuery(db.DbContext)
                 .AsSplitQuery()
                 .Where(ban => ban.Players!.Any(bp => bp.UserId == user) && !ban.Hidden)
+                .InScope(scopeServerId) // Nebula edit
                 .ToArrayAsync();
 
             var banNotes = new List<BanNoteRecord>();

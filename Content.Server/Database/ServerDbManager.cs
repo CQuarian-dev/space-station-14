@@ -26,7 +26,7 @@ using MSLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace Content.Server.Database
 {
-    public interface IServerDbManager
+    public partial interface IServerDbManager // Nebula edit
     {
         // <Trauma>
         #region Patrons
@@ -151,6 +151,8 @@ namespace Content.Server.Database
         Task<BanDef> AddBanAsync(BanDef ban);
         Task AddUnbanAsync(UnbanDef ban);
 
+        Task<int?> GetRecordScopeServerId(); // Nebula edit
+
         public Task EditBan(
             int id,
             string reason,
@@ -248,7 +250,7 @@ namespace Content.Server.Database
 
         #region Rounds
 
-        Task<int> AddNewRound(Server server, params Guid[] playerIds);
+        Task<(int Id, int Number)> AddNewRound(Server server, params Guid[] playerIds); // Nebula edit
         Task<Round> GetRound(int id);
         Task AddRoundPlayers(int id, params Guid[] playerIds);
 
@@ -501,6 +503,8 @@ namespace Content.Server.Database
             }
 
             _db.OnNotificationReceived += HandleDatabaseNotification;
+
+            HookRecordScope(); // Nebula edit
         }
 
         public void Shutdown()
@@ -588,7 +592,7 @@ namespace Content.Server.Database
             BanType type = BanType.Server)
         {
             DbReadOpsMetric.Inc();
-            return RunDbCommand(() => _db.GetBanAsync(address, userId, hwId, modernHWIds, type));
+            return RunScoped(scope => _db.GetBanAsync(address, userId, hwId, modernHWIds, type, scope)); // Nebula edit
         }
 
         public Task<List<BanDef>> GetBansAsync(
@@ -600,13 +604,19 @@ namespace Content.Server.Database
             BanType type = BanType.Server)
         {
             DbReadOpsMetric.Inc();
-            return RunDbCommand(() => _db.GetBansAsync(address, userId, hwId, modernHWIds, includeUnbanned, type));
+            return RunScoped(scope => _db.GetBansAsync(address, userId, hwId, modernHWIds, includeUnbanned, type, scope)); // Nebula edit
         }
 
         public Task<BanDef> AddBanAsync(BanDef ban)
         {
             DbWriteOpsMetric.Inc();
-            return RunDbCommand(() => _db.AddBanAsync(ban));
+            // Nebula edit start
+            return RunScoped(scope =>
+            {
+                ban.ServerId = scope;
+                return _db.AddBanAsync(ban);
+            });
+            // Nebula edit end
         }
 
         public Task AddUnbanAsync(UnbanDef unban)
@@ -745,7 +755,7 @@ namespace Content.Server.Database
             return RunDbCommand(() => _db.AddAdminRankAsync(rank, cancel));
         }
 
-        public Task<int> AddNewRound(Server server, params Guid[] playerIds)
+        public Task<(int Id, int Number)> AddNewRound(Server server, params Guid[] playerIds) // Nebula edit
         {
             DbWriteOpsMetric.Inc();
             return RunDbCommand(() => _db.AddNewRound(server, playerIds));
@@ -873,60 +883,78 @@ namespace Content.Server.Database
         public Task<int> AddAdminNote(int? roundId, Guid player, TimeSpan playtimeAtNote, string message, NoteSeverity severity, bool secret, Guid createdBy, DateTimeOffset createdAt, DateTimeOffset? expiryTime)
         {
             DbWriteOpsMetric.Inc();
-            var note = new AdminNote
+            // Nebula edit start
+            return RunScoped(scope =>
             {
-                RoundId = roundId,
-                CreatedById = createdBy,
-                LastEditedById = createdBy,
-                PlayerUserId = player,
-                PlaytimeAtNote = playtimeAtNote,
-                Message = message,
-                Severity = severity,
-                Secret = secret,
-                CreatedAt = createdAt.UtcDateTime,
-                LastEditedAt = createdAt.UtcDateTime,
-                ExpirationTime = expiryTime?.UtcDateTime
-            };
+                var note = new AdminNote
+                {
+                    RoundId = roundId,
+                    CreatedById = createdBy,
+                    LastEditedById = createdBy,
+                    PlayerUserId = player,
+                    PlaytimeAtNote = playtimeAtNote,
+                    Message = message,
+                    Severity = severity,
+                    Secret = secret,
+                    CreatedAt = createdAt.UtcDateTime,
+                    LastEditedAt = createdAt.UtcDateTime,
+                    ExpirationTime = expiryTime?.UtcDateTime,
+                    ServerId = scope,
+                };
 
-            return RunDbCommand(() => _db.AddAdminNote(note));
+                return _db.AddAdminNote(note);
+            });
+            // Nebula edit end
         }
 
         public Task<int> AddAdminWatchlist(int? roundId, Guid player, TimeSpan playtimeAtNote, string message, Guid createdBy, DateTimeOffset createdAt, DateTimeOffset? expiryTime)
         {
             DbWriteOpsMetric.Inc();
-            var note = new AdminWatchlist
+            // Nebula edit start
+            return RunScoped(scope =>
             {
-                RoundId = roundId,
-                CreatedById = createdBy,
-                LastEditedById = createdBy,
-                PlayerUserId = player,
-                PlaytimeAtNote = playtimeAtNote,
-                Message = message,
-                CreatedAt = createdAt.UtcDateTime,
-                LastEditedAt = createdAt.UtcDateTime,
-                ExpirationTime = expiryTime?.UtcDateTime
-            };
+                var note = new AdminWatchlist
+                {
+                    RoundId = roundId,
+                    CreatedById = createdBy,
+                    LastEditedById = createdBy,
+                    PlayerUserId = player,
+                    PlaytimeAtNote = playtimeAtNote,
+                    Message = message,
+                    CreatedAt = createdAt.UtcDateTime,
+                    LastEditedAt = createdAt.UtcDateTime,
+                    ExpirationTime = expiryTime?.UtcDateTime,
+                    ServerId = scope,
+                };
 
-            return RunDbCommand(() => _db.AddAdminWatchlist(note));
+                return _db.AddAdminWatchlist(note);
+            });
+            // Nebula edit end
         }
 
         public Task<int> AddAdminMessage(int? roundId, Guid player, TimeSpan playtimeAtNote, string message, Guid createdBy, DateTimeOffset createdAt, DateTimeOffset? expiryTime)
         {
             DbWriteOpsMetric.Inc();
-            var note = new AdminMessage
+            // Nebula edit start
+            return RunScoped(scope =>
             {
-                RoundId = roundId,
-                CreatedById = createdBy,
-                LastEditedById = createdBy,
-                PlayerUserId = player,
-                PlaytimeAtNote = playtimeAtNote,
-                Message = message,
-                CreatedAt = createdAt.UtcDateTime,
-                LastEditedAt = createdAt.UtcDateTime,
-                ExpirationTime = expiryTime?.UtcDateTime
-            };
+                var note = new AdminMessage
+                {
+                    RoundId = roundId,
+                    CreatedById = createdBy,
+                    LastEditedById = createdBy,
+                    PlayerUserId = player,
+                    PlaytimeAtNote = playtimeAtNote,
+                    Message = message,
+                    CreatedAt = createdAt.UtcDateTime,
+                    LastEditedAt = createdAt.UtcDateTime,
+                    ExpirationTime = expiryTime?.UtcDateTime,
+                    ServerId = scope,
+                };
 
-            return RunDbCommand(() => _db.AddAdminMessage(note));
+                return _db.AddAdminMessage(note);
+            });
+            // Nebula edit end
         }
 
         public Task<AdminNoteRecord?> GetAdminNote(int id)
@@ -954,25 +982,25 @@ namespace Content.Server.Database
         public Task<List<IAdminRemarksRecord>> GetAllAdminRemarks(Guid player)
         {
             DbReadOpsMetric.Inc();
-            return RunDbCommand(() => _db.GetAllAdminRemarks(player));
+            return RunScoped(scope => _db.GetAllAdminRemarks(player, scope)); // Nebula edit
         }
 
         public Task<List<IAdminRemarksRecord>> GetVisibleAdminNotes(Guid player)
         {
             DbReadOpsMetric.Inc();
-            return RunDbCommand(() => _db.GetVisibleAdminRemarks(player));
+            return RunScoped(scope => _db.GetVisibleAdminRemarks(player, scope)); // Nebula edit
         }
 
         public Task<List<AdminWatchlistRecord>> GetActiveWatchlists(Guid player)
         {
             DbReadOpsMetric.Inc();
-            return RunDbCommand(() => _db.GetActiveWatchlists(player));
+            return RunScoped(scope => _db.GetActiveWatchlists(player, scope)); // Nebula edit
         }
 
         public Task<List<AdminMessageRecord>> GetMessages(Guid player)
         {
             DbReadOpsMetric.Inc();
-            return RunDbCommand(() => _db.GetMessages(player));
+            return RunScoped(scope => _db.GetMessages(player, scope)); // Nebula edit
         }
         public Task EditAdminNote(int id, string message, NoteSeverity severity, bool secret, Guid editedBy, DateTimeOffset editedAt, DateTimeOffset? expiryTime)
         {
