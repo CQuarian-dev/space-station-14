@@ -1,0 +1,141 @@
+// SPDX-FileCopyrightText: 2026 Lytheriia
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
+using Content.Client.Message;
+using Content.Shared._Nebula.CCVar;
+using Content.Shared._Nebula.Discord.Linking;
+using Robust.Client.UserInterface;
+using Robust.Client.UserInterface.Controllers;
+using Robust.Shared.Configuration;
+using Robust.Shared.Network;
+using Robust.Shared.Timing;
+
+namespace Content.Client._Nebula.Discord.Linking;
+
+public sealed partial class DiscordLinkingUIController : UIController, IOnSystemChanged<DiscordLinkingSystem>
+{
+    [Dependency] private IClipboardManager _clipboard = default!;
+    [Dependency] private IConfigurationManager _config = default!;
+    [Dependency] private DiscordLinkingManager _linkingManager = default!;
+    [Dependency] private INetManager _net = default!;
+    [Dependency] private IGameTiming _timing = default!;
+    [Dependency] private IUriOpener _uriOpener = default!;
+    [Dependency] private IEntitySystemManager _entitySystemManager = default!;
+
+    private DiscordLinkingSystem LinkingSystem => _entitySystemManager.GetEntitySystem<DiscordLinkingSystem>();
+    private DiscordLinkingWindow? _window;
+    private TimeSpan _disableUntil;
+    private Guid _code;
+    private DiscordLinkingCodeStatus? _status;
+    private TimeSpan _codeExpires;
+    private static readonly TimeSpan CodeLifetime = TimeSpan.FromMinutes(3);
+
+    private bool HasValidCode => _code != default && _timing.RealTime < _codeExpires;
+
+    public override void Initialize()
+    {
+        _linkingManager.CodeReceived += OnCode;
+    }
+
+    public void OnSystemLoaded(DiscordLinkingSystem system)
+    {
+        system.VerifiedChanged += UpdateLabel;
+    }
+
+    public void OnSystemUnloaded(DiscordLinkingSystem system)
+    {
+        system.VerifiedChanged -= UpdateLabel;
+    }
+
+    private void UpdateLabel()
+    {
+        if (_window == null)
+            return;
+
+        var text = Loc.GetString("rmc-ui-link-discord-account-text");
+        if (LinkingSystem.IsVerified)
+            text = $"{Loc.GetString("rmc-ui-link-discord-account-already-linked")}\n\n{text}";
+
+        var error = _status switch
+        {
+            DiscordLinkingCodeStatus.Unavailable => "nebula-discord-linking-unavailable",
+            DiscordLinkingCodeStatus.Error => "nebula-discord-linking-error",
+            _ => null,
+        };
+        if (error != null)
+            text = $"{text}\n\n{Loc.GetString(error)}";
+
+        _window.Label.SetMarkupPermissive(text);
+        _window.CopyButton.Visible = !LinkingSystem.IsVerified && _status != DiscordLinkingCodeStatus.AlreadyLinked;
+    }
+
+    private void OnCode(DiscordLinkingCodeStatus status, Guid code)
+    {
+        _status = status;
+        _code = status == DiscordLinkingCodeStatus.Ok ? code : default;
+        _codeExpires = _timing.RealTime + CodeLifetime;
+
+        if (_window == null)
+            return;
+
+        _window.CopyButton.Disabled = !HasValidCode;
+        UpdateLabel();
+    }
+
+    public void ToggleWindow()
+    {
+        if (_window == null)
+        {
+            LinkingSystem.RequestVerificationStatus();
+
+            _status = null;
+            _window = new DiscordLinkingWindow();
+            _window.OnClose += () => _window = null;
+            UpdateLabel();
+
+            _window.CopyButton.OnPressed += _ =>
+            {
+                _clipboard.SetText(_code.ToString());
+                _window.CopyButton.Text = Loc.GetString("rmc-ui-link-discord-account-copied");
+                _window.CopyButton.Disabled = true;
+                _disableUntil = _timing.RealTime.Add(TimeSpan.FromSeconds(3));
+            };
+
+            var messageLink = _config.GetCVar(NCCVars.DiscordAccountLinkingMessageLink);
+            _window.LinkButton.Visible = !string.IsNullOrEmpty(messageLink);
+            _window.LinkButton.OnPressed += _ => _uriOpener.OpenUri(messageLink);
+
+            _window.OpenCentered();
+
+            if (HasValidCode)
+            {
+                _window.CopyButton.Disabled = false;
+            }
+            else
+            {
+                _window.CopyButton.Disabled = true;
+                _net.ClientSendMessage(new DiscordLinkingRequestMsg());
+            }
+
+            return;
+        }
+
+        _window.Close();
+        _window = null;
+    }
+
+    public override void FrameUpdate(FrameEventArgs args)
+    {
+        if (_window == null)
+            return;
+
+        var time = _timing.RealTime;
+        if (_disableUntil != default && time > _disableUntil)
+        {
+            _disableUntil = default;
+            _window.CopyButton.Text = Loc.GetString("rmc-ui-link-discord-account-copy");
+            _window.CopyButton.Disabled = false;
+        }
+    }
+}

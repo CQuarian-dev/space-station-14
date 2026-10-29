@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 using Content.Goobstation.Common.ServerCurrency;
+using Content.Server._Nebula.Discord;
 using Content.Server.Administration;
 using Content.Server.Chat.Managers;
 using Content.Shared.Administration;
@@ -122,6 +123,7 @@ public sealed partial class AddServerCurrencyCommand : IConsoleCommand
 {
     [Dependency] private ICommonCurrencyManager _currency = default!;
     [Dependency] private IPlayerManager _player = default!;
+    [Dependency] private NebulaWebhooks _webhooks = default!; // Nebula
 
     public string Command => Loc.GetString("server-currency-add-command");
     public string Description => Loc.GetString("server-currency-add-command-description");
@@ -149,6 +151,9 @@ public sealed partial class AddServerCurrencyCommand : IConsoleCommand
 
         var newCurrency = _currency.Stringify(_currency.AddCurrency(targetPlayer, currency));
         shell.WriteLine(Loc.GetString("server-currency-command-return", ("player", args[0]), ("balance", newCurrency)));
+
+        if (shell.Player != null) // Nebula
+            _webhooks.SendTokensChangedMessage(shell.Player.UserId, targetPlayer, currency);
     }
 
     public CompletionResult GetCompletion(IConsoleShell shell, string[] args)
@@ -167,6 +172,7 @@ public sealed partial class RemoveServerCurrencyCommand : IConsoleCommand
 {
     [Dependency] private ICommonCurrencyManager _currency = default!;
     [Dependency] private IPlayerManager _player = default!;
+    [Dependency] private NebulaWebhooks _webhooks = default!; // Nebula
 
     public string Command => Loc.GetString("server-currency-remove-command");
     public string Description => Loc.GetString("server-currency-remove-command-description");
@@ -194,6 +200,9 @@ public sealed partial class RemoveServerCurrencyCommand : IConsoleCommand
 
         var newCurrency = _currency.Stringify(_currency.RemoveCurrency(targetPlayer, currency));
         shell.WriteLine(Loc.GetString("server-currency-command-return", ("player", args[0]), ("balance", newCurrency)));
+
+        if (shell.Player != null) // Nebula
+            _webhooks.SendTokensChangedMessage(shell.Player.UserId, targetPlayer, -currency);
     }
 
     public CompletionResult GetCompletion(IConsoleShell shell, string[] args)
@@ -212,6 +221,7 @@ public sealed partial class SetServerCurrencyCommand : IConsoleCommand
 {
     [Dependency] private ICommonCurrencyManager _currency = default!;
     [Dependency] private IPlayerManager _player = default!;
+    [Dependency] private NebulaWebhooks _webhooks = default!; // Nebula
 
     public string Command => Loc.GetString("server-currency-set-command");
     public string Description => Loc.GetString("server-currency-set-command-description");
@@ -240,6 +250,9 @@ public sealed partial class SetServerCurrencyCommand : IConsoleCommand
         _currency.SetBalance(targetPlayer, currency);
         var newCurrency = _currency.Stringify(currency);
         shell.WriteLine(Loc.GetString("server-currency-command-return", ("player", args[0]), ("balance", newCurrency)));
+
+        if (shell.Player != null) // Nebula
+            _webhooks.SendTokensChangedMessage(shell.Player.UserId, targetPlayer, currency, true);
     }
 
     public CompletionResult GetCompletion(IConsoleShell shell, string[] args)

@@ -39,6 +39,7 @@ using Content.Shared.Ghost.Roles.Components;
 using Content.Shared.Roles.Components;
 using Content.Shared.Ghost.Systems;
 using Content.Shared.Ghost.Components;
+using Content.Shared._Nebula.Ghost.Roles.CopyProfile;
 
 namespace Content.Server.Ghost.Roles;
 
@@ -578,6 +579,13 @@ public sealed partial class GhostRoleSystem : EntitySystem
         if (!_ghostRoles.TryGetValue(identifier, out var role))
             return false;
 
+        // Nebula start
+        var attempt = new GhostRoleTakeAttemptEvent(player);
+        RaiseLocalEvent(role, ref attempt);
+        if (attempt.Cancelled)
+            return false;
+        // Nebula
+
         var ev = new TakeGhostRoleEvent(player);
         RaiseLocalEvent(role, ref ev);
 
@@ -704,7 +712,8 @@ public sealed partial class GhostRoleSystem : EntitySystem
                 RolePrototypes = (jobs, antags),
                 Kind = kind,
                 RafflePlayerCount = rafflePlayerCount,
-                RaffleEndTime = raffleEndTime
+                RaffleEndTime = raffleEndTime,
+                RoleTypes = GetRoleTypes((uid, role)), // Nebula
             });
         }
 

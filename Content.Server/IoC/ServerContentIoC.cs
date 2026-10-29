@@ -34,7 +34,9 @@ using Content.Shared.FeedbackSystem;
 using Content.Shared.IoC;
 using Content.Shared.Players.PlayTimeTracking;
 using Content.Shared.Players.RateLimiting;
+using Content.Server._Nebula.Administration;
 using Content.Server._Nebula.Discord;
+using Content.Server._Nebula.Discord.Linking;
 
 namespace Content.Server.IoC;
 
@@ -83,6 +85,8 @@ internal static class ServerContentIoC
         deps.Register<MultiServerKickManager>();
         deps.Register<CVarControlManager>();
         deps.Register<NebulaWebhooks>(); // Nebula
+        deps.Register<NebulaServerApi>(); // Nebula
+        deps.Register<DiscordLinkingManager>(); // Nebula
         //deps.Register<DiscordLink>(); // Trauma - wasn't cherry picked
         //deps.Register<DiscordChatLink>(); // Trauma
         deps.Register<IMoMMILink, MoMMILink>(); // Trauma

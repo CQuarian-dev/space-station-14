@@ -19,7 +19,7 @@ public sealed partial class NCCVars
     ///     Sets the maximum length for OOC flavor text.
     /// </summary>
     public static readonly CVarDef<int> OOCMaxFlavorTextLength =
-        CVarDef.Create("ic.oocflavor_text_length", 2500, CVar.SERVER | CVar.REPLICATED);
+        CVarDef.Create("ic.oocflavor_text_length", 5000, CVar.SERVER | CVar.REPLICATED);
 
     /// <summary>
     ///     Sets the maximum length for character description text.
@@ -62,4 +62,10 @@ public sealed partial class NCCVars
     /// </summary>
     public static readonly CVarDef<int> NSFWPreferencesLength =
         CVarDef.Create("ic.nsfw_preferences_length", 2500, CVar.SERVER | CVar.REPLICATED);
+
+    /// <summary>
+    ///     Whether players can pick alternate job titles in the character editor.
+    /// </summary>
+    public static readonly CVarDef<bool> AlternateJobTitlesEnabled =
+        CVarDef.Create("ic.alternate_job_titles_enabled", true, CVar.SERVER | CVar.REPLICATED);
 }

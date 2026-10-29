@@ -1,3 +1,4 @@
+using Content.Client._Nebula.Stylesheets;
 using Content.Client.Administration.Managers;
 using Content.Client.Audio.Midi;
 using Content.Client.Changelog;
@@ -29,6 +30,7 @@ using Content.Shared.FeedbackSystem;
 using Content.Shared.IoC;
 using Content.Shared.Players.PlayTimeTracking;
 using Content.Shared.Players.RateLimiting;
+using Content.Client._Nebula.Discord.Linking;
 
 namespace Content.Client.IoC
 {
@@ -68,6 +70,8 @@ namespace Content.Client.IoC
             collection.Register<ClientFeedbackManager>();
             collection.Register<ISharedFeedbackManager, ClientFeedbackManager>();
             collection.Register<MidiFileCollectionManager>();
+            collection.Register<DiscordLinkingManager>(); // Nebula
+            collection.Register<NebulaThemeManager>(); // Nebula
         }
     }
 }

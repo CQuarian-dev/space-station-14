@@ -68,6 +68,7 @@ public sealed partial class MiscTab : Control
         Control.AddOptionCheckBox(CCVars.StaticStorageUI, StaticStorageUI);
         Control.AddOptionCheckBox(CCVars.InterfaceChatFollowButton, ChatFollowButton);
         Control.AddOptionCheckBox(NCCVars.ErpPanelEnabled, ErpPanelCheckBox); // Nebula
+        NebulaTheme.AddOptions(Control); // Nebula
 
         Control.Initialize();
     }

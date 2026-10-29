@@ -1,3 +1,4 @@
+using Content.Server._Nebula.Discord;
 using Content.Server.Database;
 using Content.Shared.Administration;
 using Robust.Shared.Console;
@@ -8,6 +9,7 @@ namespace Content.Server.Administration.Commands
     public sealed partial class PardonCommand : LocalizedCommands
     {
         [Dependency] private IServerDbManager _dbManager = default!;
+        [Dependency] private NebulaWebhooks _webhooks = default!; // Nebula
 
         public override string Command => "pardon";
 
@@ -29,7 +31,10 @@ namespace Content.Server.Administration.Commands
 
             var ban = await _dbManager.GetBanAsync(banId);
 
-            if (ban == null)
+            // Nebula edit start
+            var scope = await _dbManager.GetRecordScopeServerId();
+            if (ban == null || !RecordScope.Matches(ban.ServerId, scope))
+            // Nebula edit end
             {
                 shell.WriteLine($"No ban found with id {banId}");
                 return;
@@ -50,7 +55,9 @@ namespace Content.Server.Administration.Commands
                 return;
             }
 
-            await _dbManager.AddUnbanAsync(new UnbanDef(banId, player?.UserId, DateTimeOffset.Now));
+            var unbanDef = new UnbanDef(banId, player?.UserId, DateTimeOffset.Now);
+            await _dbManager.AddUnbanAsync(unbanDef);
+            _webhooks.SendUnban(unbanDef, ban); // Nebula
 
             shell.WriteLine(Loc.GetString($"cmd-pardon-success", ("id", banId)));
         }

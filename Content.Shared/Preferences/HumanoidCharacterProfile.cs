@@ -241,6 +241,8 @@ namespace Content.Shared.Preferences
                 other.Knowledge)
         // </Trauma>
         {
+            JobAlternateTitles = new(other.JobAlternateTitles); // Nebula edit
+            Wardrobe = [.. other.Wardrobe]; // Nebula edit
         }
 
         /// <summary>
@@ -376,6 +378,7 @@ namespace Content.Shared.Preferences
                     gender = Gender.Male;
                     break;
                 case Sex.Female:
+                case Sex.Futanari: // Nebula
                     gender = Gender.Female;
                     break;
             }
@@ -425,7 +428,7 @@ namespace Content.Shared.Preferences
             var speciesProto = prototypeManager.Index(profile.Species);
 
             profile.Sex = (randomizeCfg & RandomizeCfg.Sex) != 0 ? RandomSex(speciesProto) : baseProfile.Sex;
-            profile.Voice = speciesProto.DefaultSoundsBySex[(int) profile.Sex];
+            profile.Voice = speciesProto.GetDefaultSounds(profile.Sex);
             profile.Gender = (randomizeCfg & RandomizeCfg.Gender) != 0 ? RandomGender(profile.Sex) : baseProfile.Gender;
             profile.Name = (randomizeCfg & RandomizeCfg.Name) != 0 ? RandomName(speciesProto, profile.Gender) : baseProfile.Name;
             profile.Age = (randomizeCfg & RandomizeCfg.Age) != 0 ? RandomAge(speciesProto) : baseProfile.Age;
@@ -715,6 +718,8 @@ namespace Content.Shared.Preferences
             if (CustomSpecies != other.CustomSpecies) return false;
             if (!DetailExaminableData.Equals(other.DetailExaminableData)) return false;
             if (ERPStatus != other.ERPStatus) return false;
+            if (!JobAltTitlesEqual(other)) return false;
+            if (!Wardrobe.SequenceEqual(other.Wardrobe)) return false;
             // Nebula end
             if (PreferenceUnavailable != other.PreferenceUnavailable) return false;
             if (SpawnPriority != other.SpawnPriority) return false;
@@ -741,12 +746,13 @@ namespace Content.Shared.Preferences
                 Sex.Male => Sex.Male,
                 Sex.Female => Sex.Female,
                 Sex.Unsexed => Sex.Unsexed,
+                Sex.Futanari => Sex.Futanari, // Nebula
                 _ => Sex.Male // Invalid enum values.
             };
 
             var voice = Voice;
             if (!speciesPrototype.Voices.Contains(voice))
-                voice = speciesPrototype.DefaultSoundsBySex[(int) sex];
+                voice = speciesPrototype.GetDefaultSounds(sex);
 
             // ensure the species can be that sex and their age fits the founds
             if (!speciesPrototype.Sexes.Contains(sex))
@@ -807,11 +813,9 @@ namespace Content.Shared.Preferences
                 width = Math.Clamp(Width, speciesPrototype.MinWidth, speciesPrototype.MaxWidth);
 
             var customSpeciesMaxLength = configManager.GetCVar(NCCVars.MaxCustomSpeciesLength);
-            string customSpecies;
-            if (CustomSpecies.Length > customSpeciesMaxLength)
-                customSpecies = FormattedMessage.RemoveMarkupOrThrow(CustomSpecies)[..customSpeciesMaxLength];
-            else
-                customSpecies = FormattedMessage.RemoveMarkupOrThrow(CustomSpecies);
+            var customSpecies = FormattedMessage.RemoveMarkupPermissive(CustomSpecies ?? string.Empty);
+            if (customSpecies.Length > customSpeciesMaxLength)
+                customSpecies = customSpecies[..customSpeciesMaxLength];
 
             var erpStatus = ERPStatus switch
             {
@@ -874,7 +878,7 @@ namespace Content.Shared.Preferences
             Height = height;
             Width = width;
             CustomSpecies = customSpecies;
-            DetailExaminableData = DetailExaminableData.Sanitized(configManager);
+            DetailExaminableData = (DetailExaminableData ?? new()).Sanitized(configManager);
             ERPStatus = erpStatus;
             // Nebula end
             Sex = sex;
@@ -891,6 +895,8 @@ namespace Content.Shared.Preferences
             }
 
             PreferenceUnavailable = prefsUnavailableMode;
+            ValidateJobAltTitles(prototypeManager); // Nebula edit
+            ValidateWardrobe(prototypeManager); // Nebula edit
 
             _antagPreferences.Clear();
             _antagPreferences.UnionWith(antags);

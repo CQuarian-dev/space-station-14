@@ -1,6 +1,7 @@
 // <Trauma>
 using Content.Trauma.Common.LinkAccount;
 // </Trauma>
+using Content.Client._Nebula.Discord.Linking;
 using Content.Client.Changelog;
 using Content.Client.Stylesheets;
 using Content.Client.UserInterface.Systems.EscapeMenu;
@@ -49,11 +50,12 @@ namespace Content.Client.Info
             AddInfoButton("server-info-telegram-button", CCVars.InfoLinksTelegram);
             AddInfoButton("rmc-ui-patreon", CCVars.InfoLinksPatreon);
 
+            var linkAccount = UserInterfaceManager.GetUIController<DiscordLinkingUIController>();
             var linkAccountButton = new Button
             {
                 Text = Loc.GetString("rmc-ui-link-discord-account"),
             };
-            linkAccountButton.OnPressed += _ => OnToggleWindow?.Invoke();
+            linkAccountButton.OnPressed += _ => linkAccount.ToggleWindow();
             buttons.AddChild(linkAccountButton);
 
             var guidebookController = UserInterfaceManager.GetUIController<GuidebookUIController>();

@@ -108,7 +108,7 @@ namespace Content.Server.Preferences.Managers
 
             var spawnPriority = (SpawnPriorityPreference) profile.SpawnPriority;
 
-            var gender = sex == Sex.Male ? Gender.Male : Gender.Female;
+            var gender = sex == Sex.Male ? Gender.Male : Gender.Female; // Nebula
             if (Enum.TryParse<Gender>(profile.Gender, true, out var genderVal))
                 gender = genderVal;
 
@@ -123,9 +123,9 @@ namespace Content.Server.Preferences.Managers
                 speciesPrototype = _prototypeManager.Index<SpeciesPrototype>(species);
             }
 
-            var voice = profile.Voice ?? speciesPrototype.DefaultSoundsBySex[(int) sex];
+            var voice = profile.Voice ?? speciesPrototype.GetDefaultSounds(sex); // Nebula edit
             if (!_prototypeManager.HasIndex(voice))
-                voice = speciesPrototype.DefaultSoundsBySex[(int) sex];
+                voice = speciesPrototype.GetDefaultSounds(sex); // Nebula edit
 
             if (profile.OrganMarkings?.RootElement is { } element)
             {
@@ -221,7 +221,8 @@ namespace Content.Server.Preferences.Managers
                 profile.BarkVoice ?? HumanoidProfileSystem.DefaultBarkVoice,
                 KnowledgeProfile.Verify(profile.KnowledgeMastery, _prototypeManager)
             // </Trauma>
-            );
+            )
+            { JobAlternateTitles = ParseJobAltTitles(profile), Wardrobe = ParseWardrobe(profile) }; // Nebula edit
         }
 
         private async void HandleSelectCharacterMessage(MsgSelectCharacter message)
@@ -249,6 +250,7 @@ namespace Content.Server.Preferences.Managers
             }
 
             prefsData.Prefs = new PlayerPreferences(curPrefs.Characters, index, curPrefs.AdminOOCColor, curPrefs.ConstructionFavorites);
+            PreferencesChanged?.Invoke(userId); // Nebula
             _afkManager.PlayerDidAction(message.MsgChannel);
 
             if (ShouldStorePrefs(message.MsgChannel.AuthType))
@@ -293,6 +295,7 @@ namespace Content.Server.Preferences.Managers
             };
 
             prefsData.Prefs = new PlayerPreferences(profiles, slot, curPrefs.AdminOOCColor, curPrefs.ConstructionFavorites);
+            PreferencesChanged?.Invoke(userId); // Nebula
 
             if (ShouldStorePrefs(session.Channel.AuthType))
                 await _db.SaveCharacterSlotAsync(userId, profile, slot);

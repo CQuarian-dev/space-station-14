@@ -125,7 +125,7 @@ public sealed partial class HumanoidProfileEditor
         _voices.AddRange(availableVoices.Select(protoId => _prototypeManager.Index(protoId)));
 
         if (_voices.All(proto => Profile?.Voice != proto.ID))
-            SetVoice(speciesPrototype.DefaultSoundsBySex[(int) Profile.Sex]);
+            SetVoice(speciesPrototype.GetDefaultSounds(Profile.Sex)); // Nebula edit
 
         for (var i = 0; i < availableVoices.Count; i++)
         {
@@ -265,6 +265,7 @@ public sealed partial class HumanoidProfileEditor
                 Profile = Profile?.WithGender(Gender.Male);
                 break;
             case Sex.Female:
+            case Sex.Futanari: // Nebula
                 Profile = Profile?.WithGender(Gender.Female);
                 break;
             default:
@@ -274,9 +275,10 @@ public sealed partial class HumanoidProfileEditor
 
         // this does the same as above but for voice
         if (_prototypeManager.TryIndex(Profile?.Species, out var prototype))
-            SetVoice(prototype.DefaultSoundsBySex[(int) newSex]);
+            SetVoice(prototype.GetDefaultSounds(newSex));
 
         UpdateGenderControls();
+        UpdateAltTitleGender(); // Nebula edit
         UpdateVoiceControls();
         _markingsModel.SetOrganSexes(newSex);
         ReloadPreview();
@@ -301,6 +303,7 @@ public sealed partial class HumanoidProfileEditor
     private void SetGender(Gender newGender)
     {
         Profile = Profile?.WithGender(newGender);
+        UpdateAltTitleGender(); // Nebula edit
         ReloadPreview();
     }
 

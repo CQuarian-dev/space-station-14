@@ -3,6 +3,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Content.Server._Nebula.Discord;
 using Content.Server.Chat.Managers;
 using Content.Server.Database;
 using Content.Server.GameTicking;
@@ -38,6 +39,7 @@ public sealed partial class BanManager : IBanManager, IPostInjectInit
     [Dependency] private IEntitySystemManager _systems = default!;
     [Dependency] private ITaskManager _taskManager = default!;
     [Dependency] private UserDbDataManager _userDbData = default!;
+    [Dependency] private NebulaWebhooks _webhooks = default!; // Nebula
 
     private ISawmill _sawmill = default!;
 
@@ -126,6 +128,7 @@ public sealed partial class BanManager : IBanManager, IPostInjectInit
 
         await _db.AddBanAsync(banDef);
         OnBanCreated?.Invoke(banDef); // Trauma
+        _webhooks.SendBan(banInfo, banDef); // Nebula
 
         if (_cfg.GetCVar(CCVars.ServerBanResetLastReadRules))
         {
@@ -258,6 +261,8 @@ public sealed partial class BanManager : IBanManager, IPostInjectInit
             if (_playerManager.TryGetSessionById(userId, out var session))
                 SendRoleBans(session);
         }
+
+        _webhooks.SendBan(banInfo, banDef); // Nebula
     }
 
     private async Task<(BanDef Ban, DateTimeOffset? Expires)> CreateBanDef(
@@ -277,10 +282,12 @@ public sealed partial class BanManager : IBanManager, IPostInjectInit
         {
             roundIds = [..banInfo.RoundIds];
         }
-        else if (_systems.TryGetEntitySystem<ServerGameTicker>(out var ticker) && ticker.RoundId != 0)
+        // Nebula edit start
+        else if (_systems.TryGetEntitySystem<ServerGameTicker>(out var ticker) && ticker.RoundDatabaseId != 0)
         {
-            roundIds = [ticker.RoundId];
+            roundIds = [ticker.RoundDatabaseId];
         }
+        // Nebula edit end
         else
         {
             roundIds = [];
@@ -364,7 +371,10 @@ public sealed partial class BanManager : IBanManager, IPostInjectInit
     {
         var ban = await _db.GetBanAsync(banId);
 
-        if (ban == null)
+        // Nebula edit start
+        var scope = await _db.GetRecordScopeServerId();
+        if (ban == null || !RecordScope.Matches(ban.ServerId, scope))
+        // Nebula edit end
         {
             return $"No ban found with id {banId}";
         }
@@ -385,7 +395,8 @@ public sealed partial class BanManager : IBanManager, IPostInjectInit
             return response.ToString();
         }
 
-        await _db.AddUnbanAsync(new UnbanDef(banId, unbanningAdmin, DateTimeOffset.Now));
+        var unbanDef = new UnbanDef(banId, unbanningAdmin, DateTimeOffset.Now);
+        await _db.AddUnbanAsync(unbanDef);
 
         foreach (var user in ban.UserIds)
         {
@@ -397,6 +408,8 @@ public sealed partial class BanManager : IBanManager, IPostInjectInit
             }
 
         }
+
+        _webhooks.SendUnban(unbanDef, ban); // Nebula
 
         return $"Pardoned ban with id {banId}";
     }
