@@ -27,6 +27,17 @@ erp-panel-results =
 erp-panel-empty-search = No results found for your query.
 erp-panel-empty-available = No interactions available right now.
 erp-panel-interaction-cooldown-tooltip = Available in { $seconds } sec.
+erp-panel-empty-incapacitated = Can't interact while one of you is unconscious or dead.
+erp-panel-empty-blocked = Can't interact while one of you is stunned or asleep.
+
+erp-panel-out-of-reach = The target is out of reach.
+erp-panel-target-unavailable = This is unavailable right now.
+erp-panel-blocked-incapacitated = Can't interact: one of you is unconscious or dead.
+erp-panel-blocked-self-asleep = Can't interact while you are asleep.
+erp-panel-blocked-self-stunned = Can't interact while you are stunned.
+erp-panel-blocked-self-busy = You can't do that right now.
+erp-panel-blocked-target-asleep = Can't interact while the target is asleep.
+erp-panel-blocked-target-stunned = Can't interact while the target is stunned.
 
 erp-panel-custom-arousal-button-tooltip = How strongly interactions arouse you, no matter who performs them.
 erp-panel-custom-moaning-button-tooltip = How often you moan from interactions.
@@ -70,6 +81,7 @@ erp-custom-emote-kind = Group
 erp-custom-emote-kind-tooltip = Soft and harmful leave arousal alone, erotic: partner +5, you +1, harmful erotic: partner -5.
 erp-custom-emote-sound = Sound
 erp-custom-emote-sound-none = No sound
+erp-custom-emote-sound-preview = Preview (only you hear it)
 erp-custom-emote-mode-target = On partner
 erp-custom-emote-mode-self = On self
 erp-custom-emote-message-placeholder = hugs { "{target}" }.

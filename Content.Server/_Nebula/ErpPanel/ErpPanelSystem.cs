@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using Content.Server.Administration.Logs;
 using Content.Server.Chat.Managers;
@@ -10,6 +11,7 @@ using Content.Shared._Nebula.CCVar;
 using Content.Shared._Nebula.ERP;
 using Content.Shared._Nebula.ErpPanel;
 using Content.Shared.ActionBlocker;
+using Content.Shared.Bed.Sleep;
 using Content.Shared.Chat;
 using Content.Shared.Damage.Systems;
 using Content.Shared.Database;
@@ -18,6 +20,7 @@ using Content.Shared.IdentityManagement;
 using Content.Shared.Interaction;
 using Content.Shared.Mobs.Systems;
 using Content.Shared.Popups;
+using Content.Shared.Stunnable;
 using Content.Shared.Verbs;
 using Robust.Shared.Audio;
 using Robust.Shared.Audio.Systems;
@@ -74,8 +77,10 @@ public sealed partial class ErpPanelSystem : EntitySystem
 
     private void OnMapInit(Entity<ErpPanelOwnerComponent> entity, ref MapInitEvent args)
     {
+        // the engine silently drops messages of a cuffed or stunned actor, CanAct checks it with a popup instead
         var interfaceData = new InterfaceData(
-            clientType: "Content.Client._Nebula.ErpPanel.ErpPanelWindowBUI"
+            clientType: "Content.Client._Nebula.ErpPanel.ErpPanelWindowBUI",
+            requireInputValidation: false
         );
 
         _ui.SetUi(entity.Owner, ErpPanelKey.Key, interfaceData);
@@ -89,13 +94,29 @@ public sealed partial class ErpPanelSystem : EntitySystem
 
     private void OnOpenPanel(Entity<ErpPanelOwnerComponent> entity, ref ErpPanelOpenEvent args)
     {
-        if (!_interaction.IsAccessible(entity.Owner, args.Target))
+        var user = entity.Owner;
+        if (!IsValidUi(user, args.Target))
+        {
+            if (IsIncapacitated(user, args.Target))
+                Popup(user, "erp-panel-blocked-incapacitated");
+
+            return;
+        }
+
+        if (!_interaction.IsAccessible(user, args.Target))
+        {
+            Popup(user, "erp-panel-out-of-reach");
+            return;
+        }
+
+        if (!CanAct(user, args.Target))
             return;
 
-        if (!TryOpenPanel(entity.Owner, args.Target))
+        if (!_ui.TryOpenUi(user, ErpPanelKey.Key, user))
             return;
 
         entity.Comp.Target = args.Target;
+        _ui.SetUiState(user, ErpPanelKey.Key, new ErpPanelBuiState(GetNetEntity(user), GetNetEntity(args.Target)));
 
         // arousal is only sent to its owner and the partner with the panel open
         if (TryComp<ArousalComponent>(args.Target, out var targetArousal))
@@ -112,26 +133,38 @@ public sealed partial class ErpPanelSystem : EntitySystem
 
     private void OnSendMessage(Entity<ErpPanelOwnerComponent> entity, ref ErpPanelSendMessage args)
     {
-        var user = args.Actor;
-        var target = entity.Comp.Target;
-        if (target == null || user != entity.Owner)
+        if (!TryGetTarget(entity, args.Actor, out var target))
             return;
 
-        ProcessInteraction(user, target.Value, args.Interaction, args.PrivateMode);
+        ProcessInteraction(args.Actor, target.Value, args.Interaction, args.PrivateMode);
     }
 
     private void OnCustomEmote(Entity<ErpPanelOwnerComponent> entity, ref ErpPanelCustomEmoteMessage args)
     {
-        var target = entity.Comp.Target;
-        if (target == null || args.Actor != entity.Owner)
+        if (!TryGetTarget(entity, args.Actor, out var target))
             return;
 
         ProcessCustomInteraction(args.Actor, target.Value, args.Emote, args.PrivateMode);
     }
 
+    private bool TryGetTarget(Entity<ErpPanelOwnerComponent> entity, EntityUid actor, [NotNullWhen(true)] out EntityUid? target)
+    {
+        target = entity.Comp.Target;
+        if (target == null || actor != entity.Owner)
+            return false;
+
+        if (!TerminatingOrDeleted(target.Value))
+            return true;
+
+        entity.Comp.Target = null;
+        target = null;
+        return false;
+    }
+
     private void OnGetVerbs(Entity<ErpPanelOwnerComponent> ent, ref GetVerbsEvent<Verb> args)
     {
-        if (!IsValidUi(args.User, ent.Owner))
+        // incapacitated targets keep the verb, opening it explains why nothing can be done
+        if (!IsPanelAvailable(args.User, ent.Owner))
             return;
 
         var user = args.User;
@@ -224,7 +257,7 @@ public sealed partial class ErpPanelSystem : EntitySystem
         if (!TryComp<ErpPanelOwnerComponent>(user, out var userPanel))
             return;
 
-        if (!IsValidInteraction(user, target, interaction, userPanel))
+        if (!CanRunInteraction(user, target, interaction, userPanel))
             return;
 
         Filter? privateFilter = privateMode
@@ -347,7 +380,7 @@ public sealed partial class ErpPanelSystem : EntitySystem
     {
         if (privateFilter == null)
         {
-            _chat.TrySendInGameICMessage(source, message, InGameICChatType.Emote, hideChat);
+            _chat.TrySendInGameICMessage(source, message, InGameICChatType.Emote, hideChat, checkRadioPrefix: false);
             return;
         }
 
@@ -390,63 +423,105 @@ public sealed partial class ErpPanelSystem : EntitySystem
             _audio.PlayPvs(sound, user);
     }
 
-    private bool TryOpenPanel(EntityUid user, EntityUid target)
+    /// <summary>
+    /// Both sides can use the panel at all, regardless of their current state.
+    /// </summary>
+    private bool IsPanelAvailable(EntityUid user, EntityUid target)
     {
-        if (!IsValidUi(user, target))
-            return false;
-
-        _ui.TryOpenUi(user, ErpPanelKey.Key, user);
-
-        var state = new ErpPanelBuiState(GetNetEntity(user), GetNetEntity(target));
-        _ui.SetUiState(user, ErpPanelKey.Key, state);
-        return true;
-    }
-
-    private bool IsValidUi(EntityUid user, EntityUid target)
-    {
-        if (!HasComp<ErpPanelOwnerComponent>(user))
-            return false;
-
-        if (!HasComp<ErpPanelOwnerComponent>(target))
+        if (!HasComp<ErpPanelOwnerComponent>(user) || !HasComp<ErpPanelOwnerComponent>(target))
             return false;
 
         if (!HasComp<ArousalComponent>(user) || !HasComp<ArousalComponent>(target))
             return false;
 
-        if (!IsPanelEnabled(user) || !IsPanelEnabled(target))
-            return false;
-
-        if (_mobState.IsIncapacitated(user) || _mobState.IsIncapacitated(target))
-            return false;
-
-        return true;
+        return IsPanelEnabled(user) && IsPanelEnabled(target);
     }
 
-    private bool IsValidInteraction(EntityUid user, EntityUid target, InteractionData interaction, ErpPanelOwnerComponent userPanel)
+    private bool IsIncapacitated(EntityUid user, EntityUid target)
+    {
+        return _mobState.IsIncapacitated(user) || _mobState.IsIncapacitated(target);
+    }
+
+    private bool IsValidUi(EntityUid user, EntityUid target)
+    {
+        return IsPanelAvailable(user, target) && !IsIncapacitated(user, target);
+    }
+
+    private bool CanRunInteraction(EntityUid user, EntityUid target, InteractionData interaction, ErpPanelOwnerComponent userPanel)
     {
         if (userPanel.LastInteraction + ErpPanelOwnerComponent.Cooldown > _timing.CurTime)
             return false;
 
-        if (!_interaction.InRangeAndAccessible(user, target, interaction.Range))
+        if (!IsPanelAvailable(user, target))
+        {
+            Popup(user, "erp-panel-target-unavailable");
+            return false;
+        }
+
+        if (IsIncapacitated(user, target))
+        {
+            Popup(user, "erp-panel-blocked-incapacitated");
+            return false;
+        }
+
+        if (!CanAct(user, target))
             return false;
 
-        if (!IsValidUi(user, target))
+        if (!_interaction.InRangeAndAccessible(user, target, interaction.Range))
+        {
+            Popup(user, "erp-panel-out-of-reach");
             return false;
+        }
 
         if (interaction.IsErotic && !CanUseErp(user, target))
-            return false;
-
-        // cuffed, asleep or stunned - Soft only
-        if (interaction.Kind != PanelInteractionKind.Soft && !CanActFreely(user, target))
             return false;
 
         return true;
     }
 
-    private bool CanActFreely(EntityUid user, EntityUid target)
+    /// <summary>
+    /// Cuffs don't matter, a stunned or sleeping side can't take part.
+    /// </summary>
+    private bool CanAct(EntityUid user, EntityUid target)
     {
-        return _actionBlocker.CanInteract(user, target)
-               && (user == target || _actionBlocker.CanInteract(target, null));
+        if (GetBlockReason(user) is { } selfReason)
+        {
+            Popup(user, $"erp-panel-blocked-self-{selfReason}");
+            return false;
+        }
+
+        if (!_actionBlocker.CanEmote(user))
+        {
+            Popup(user, "erp-panel-blocked-self-busy");
+            return false;
+        }
+
+        if (user == target)
+            return true;
+
+        if (GetBlockReason(target) is { } targetReason)
+        {
+            Popup(user, $"erp-panel-blocked-target-{targetReason}");
+            return false;
+        }
+
+        return true;
+    }
+
+    private string? GetBlockReason(EntityUid uid)
+    {
+        if (HasComp<SleepingComponent>(uid))
+            return "asleep";
+
+        if (HasComp<StunnedComponent>(uid))
+            return "stunned";
+
+        return null;
+    }
+
+    private void Popup(EntityUid user, string locId)
+    {
+        _popup.PopupEntity(Loc.GetString(locId), user, user, PopupType.SmallCaution);
     }
 
     private bool IsPanelEnabled(EntityUid uid)

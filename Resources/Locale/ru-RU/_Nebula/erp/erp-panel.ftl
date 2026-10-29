@@ -27,6 +27,17 @@ erp-panel-results =
 erp-panel-empty-search = По вашему запросу ничего не найдено.
 erp-panel-empty-available = Сейчас нет доступных взаимодействий.
 erp-panel-interaction-cooldown-tooltip = Доступно через { $seconds } с.
+erp-panel-empty-incapacitated = Невозможно взаимодействовать, пока кто-то из вас без сознания или мёртв.
+erp-panel-empty-blocked = Невозможно взаимодействовать, пока кто-то из вас оглушён или спит.
+
+erp-panel-out-of-reach = Цель вне досягаемости.
+erp-panel-target-unavailable = Сейчас это недоступно.
+erp-panel-blocked-incapacitated = Невозможно взаимодействовать: кто-то из вас без сознания или мёртв.
+erp-panel-blocked-self-asleep = Невозможно взаимодействовать, пока вы спите.
+erp-panel-blocked-self-stunned = Невозможно взаимодействовать, пока вы оглушены.
+erp-panel-blocked-self-busy = Сейчас вы не можете этого сделать.
+erp-panel-blocked-target-asleep = Невозможно взаимодействовать, пока цель спит.
+erp-panel-blocked-target-stunned = Невозможно взаимодействовать, пока цель оглушена.
 
 erp-panel-custom-arousal-button-tooltip = Насколько сильно вас возбуждают взаимодействия, кто бы их ни совершал.
 erp-panel-custom-moaning-button-tooltip = Насколько часто вы стонете от взаимодействий.
@@ -70,6 +81,7 @@ erp-custom-emote-kind = Группа
 erp-custom-emote-kind-tooltip = Мягкое и грубое не меняют возбуждение, эротическое: партнёру +5, вам +1, грубое эротическое: партнёру -5.
 erp-custom-emote-sound = Звук
 erp-custom-emote-sound-none = Без звука
+erp-custom-emote-sound-preview = Прослушать (слышите только вы)
 erp-custom-emote-mode-target = На партнёра
 erp-custom-emote-mode-self = На себя
 erp-custom-emote-message-placeholder = обнимает { "{target}" }.
